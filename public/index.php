@@ -1,6 +1,6 @@
 <?php
 
-/**
+/**php artisan key:generategit remote add origin git@github.com:MrDastanDanik/chat.git
  * Laravel - A PHP Framework For Web Artisans
  *
  * @package  Laravel
