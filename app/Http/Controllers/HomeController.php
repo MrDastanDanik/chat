@@ -14,12 +14,8 @@ class HomeController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    /*public function root()
+    public function root()
     {
         return redirect()->route('home');
-    }*/
-    public function show()
-    {
-        return view('welcome');
     }
 }
