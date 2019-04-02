@@ -11,6 +11,10 @@ class HomeController extends Controller
         $this->middleware('auth');
     }
 
+    public function home()
+    {
+        return view('home');
+    }
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
