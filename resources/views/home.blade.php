@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@push('scripts')
+    <script src="js/chat.js"></script>
+@endpush
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
@@ -15,6 +19,9 @@
                     @endif
 
                     You are logged in!
+                        <script>
+                            const USER_TOKEN = `{{$user}}`;
+                        </script>
                 </div>
             </div>
         </div>
