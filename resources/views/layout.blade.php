@@ -67,7 +67,7 @@
 <div class="flex-center position-ref full-height">
     <div class="top-right links">
         @auth
-            <a href="{{ route('home') }}">Home</a>
+            <a href="{{ route('/home') }}">Home</a>
             <a href="javascript:void()" onclick="document.getElementById('logout-form').submit();">Logout</a>
             <form method="POST" action="{{ route('logout') }}" id="logout-form">
                 {{ csrf_field() }}

@@ -16,5 +16,5 @@ Auth::routes();
 
 Route::group(['middleware' => ['auth']], function () {
     Route::get('/', 'HomeController@root');
-    Route::get('home', 'HomeController@home')->name('home');
+    Route::get('/home', 'HomeController@home')->name('/home');
 });

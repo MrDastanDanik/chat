@@ -2,24 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     public function home()
     {
-        return view('home');
+        return view('/home', ['user' => Auth::user()->getRememberToken()]);
     }
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
     public function root()
     {
-        return redirect()->route('home');
+        return redirect()->route('/home');
     }
 }
