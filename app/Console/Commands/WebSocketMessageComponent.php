@@ -67,9 +67,25 @@ class WebSocketMessageComponent implements MessageComponentInterface
 
     public function onMessage(ConnectionInterface $conn, MessageInterface $msg)
     {
-        foreach ($this->connections as $connections) {
-            $connections->send($msg->getPayload());
+        $data = $msg->getPayload();
+        switch ($data->action){
+            case 'say':
+                foreach ($this->connections as $connections) {
+                    $connections->send($msg->getPayload());
 
+                }
+                break;
+            case 'ban':
+                if (!$conn->user->isAdmin){
+                    return false;
+                }
+
+
+
+                break;
         }
+
+
+
     }
 }

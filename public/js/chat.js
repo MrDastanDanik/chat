@@ -1,8 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
     $('.hid').css('display', 'none');
-$('.in').on('click', function () {
-    $('.hid').css('display','');
-    $('.in').css('display', 'none');
+
+    let clientOnline = [];
+    $('.in').on('click', function () {
+        $('.hid').css('display', '');
+        $('.in').css('display', 'none');
         let name = $('.dropdown-toggle').text().replace(/\s+/g, '');
         let date = `${new Date().getHours()}:${new Date().getMinutes()}`;
 
@@ -11,6 +13,9 @@ $('.in').on('click', function () {
         conn.onopen = function (e) {
             console.log("Connection established!");
             conn.send(JSON.stringify({action: "ping", payload: "pong", user: name, time: date}));
+            conn.send(JSON.stringify({action: "say", payload: "connected", user: name, time: date}));
+            clientOnline.push(name);
+            console.log(clientOnline);
         };
 
         conn.onclose = function (e) {
