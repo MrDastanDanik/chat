@@ -67,9 +67,9 @@ class WebSocketMessageComponent implements MessageComponentInterface
 
     public function onMessage(ConnectionInterface $conn, MessageInterface $msg)
     {
-        // TODO: Implement onMessage() method.
-        $this->connections->each(function (ConnectionInterface $connection) use ($msg) {
-            $connection->send($msg->getPayload());
-        });
+        foreach ($this->connections as $connections) {
+            $connections->send($msg->getPayload());
+
+        }
     }
 }
