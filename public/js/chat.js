@@ -1,24 +1,27 @@
+let conn;
+
 document.addEventListener('DOMContentLoaded', function () {
+    conn = new WebSocket(`ws://localhost:8090?token=${USER_TOKEN}`);
+    chat();
+});
+
+function chat() {
     $('.hid').css('display', 'none');
 
-    let clientOnline = [];
     $('.in').on('click', function () {
         $('.hid').css('display', '');
         $('.in').css('display', 'none');
-        let name = $('.dropdown-toggle').text().replace(/\s+/g, '');
         let date = `${new Date().getHours()}:${new Date().getMinutes()}`;
 
-        let conn = new WebSocket(`ws://localhost:8090?token=${USER_TOKEN}`);
+        conn = new WebSocket(`ws://localhost:8090?token=${USER_TOKEN}`);
 
         conn.onopen = function (e) {
             console.log("Connection established!");
-            conn.send(JSON.stringify({action: "ping", payload: "pong", user: name, time: date}));
-            conn.send(JSON.stringify({action: "say", payload: "connected", user: name, time: date}));
-            clientOnline.push(name);
-            console.log(clientOnline);
+            conn.send(JSON.stringify({action: "connected"}));
         };
 
         conn.onclose = function (e) {
+            conn.send(JSON.stringify({action: "disconnected"}));
             if (event.wasClean) {
                 console.log('Соединение закрыто');
             } else {
@@ -28,38 +31,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
         $('.btn-primary').on('click', function () {
             let message = $(".type_msg").val();
-
-            conn.send(JSON.stringify({action: "say", payload: message, user: name, time: date}));
+            conn.send(JSON.stringify({action: "say", payload: message}));
         });
 
-
         $('.out').on('click', function () {
-            conn.send(JSON.stringify({action: "say", payload: "disconnected", user: name, time: date}));
             conn.close();
             $('.hid').css('display', 'none');
             $('.in').css('display', '');
         });
 
-
         conn.onmessage = function (e) {
-            console.log(e.data);
-            let obj = JSON.parse(e.data);
-
-            switch (obj.action) {
-                case 'say':
-                    $('.msg').append(`<div class="incoming_msg">
-              <div class="received_msg">
-                <div class="received_withd_msg">
-                  <p>${obj.user} : ${obj.payload}</br>${obj.time}</p>
-                  </div>
-              </div>
-            </div>`);
+            let data = JSON.parse(e.data);
+            console.log(data);
+            switch (data.action) {
+                case "say":
+                    $('.msg').append(`<div class="incoming_msg">${data.payload}</div>`);
                     $(".type_msg").val('');
                     break;
-                case 'ping':
-                    $('.online').append(`<p>${obj.user}</p>`);
+                case "connected":
+                    $('.online').append(`<input type="button" class="btn user" onclick="muted(this)" value=${data.payload}>`);
                     break;
             }
         };
     });
-});
+}
+
+function muted(elem) {
+    conn.send(JSON.stringify({action: "mute", payload: elem.value}));
+}

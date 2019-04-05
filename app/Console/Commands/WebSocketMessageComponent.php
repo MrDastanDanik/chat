@@ -32,13 +32,20 @@ class WebSocketMessageComponent implements MessageComponentInterface
         parse_str($conn->httpRequest->getUri()->getQuery(), $params);
 
         if (empty($params['token'])
-                || !$user = User::where(['remember_token' => $params['token']])->first()) {
+            || !$user = User::where(['remember_token' => $params['token']])->first()) {
             $conn->close();
         }
         // запоминаем пользователя в обьекте подключения
         $conn->user = $user;
 
         $this->connections->add($conn);
+
+        $conn->send($conn->user);
+
+        foreach ($this->connections as $connections) {
+            $connections->send(json_encode(array('action' => 'connected', 'payload' => $conn->user->name)));
+            $connections->send(json_encode(array('action' => 'say', 'payload' => $conn->user->name . ' connected')));
+        }
     }
 
     /**
@@ -48,6 +55,10 @@ class WebSocketMessageComponent implements MessageComponentInterface
      */
     function onClose(ConnectionInterface $conn)
     {
+        foreach ($this->connections as $connections) {
+            $connections->send(json_encode(array('action' => 'disconnected', 'payload' => $conn->user->name)));
+            $connections->send(json_encode(array('action' => 'say', 'payload' => $conn->user->name . ' disconnected')));
+        }
 
     }
 
@@ -60,32 +71,48 @@ class WebSocketMessageComponent implements MessageComponentInterface
      */
     function onError(ConnectionInterface $conn, Exception $e)
     {
-        // TODO: Implement onError() method.
-        echo "An error has occurred with user";
-        $conn->close();
+
     }
 
     public function onMessage(ConnectionInterface $conn, MessageInterface $msg)
     {
-        $data = $msg->getPayload();
-        switch ($data->action){
-            case 'say':
-                foreach ($this->connections as $connections) {
-                    $connections->send($msg->getPayload());
+        $data = json_decode($msg->getPayload());
+        var_dump($conn->user->mute);
+        if (!$conn->user->mute) {
+            switch ($data->action) {
+                case 'say':
+                    foreach ($this->connections as $connections) {
+                        $connections->send(json_encode(array('action' => 'say', 'payload' => $conn->user->name . ' : ')));
+                        $connections->send($msg->getPayload());
+                    }
+                    break;
+                case 'mute':
+                    $user = User::where(['name' => $data->payload])->first();
+                    if (!$user->admin) {
 
-                }
-                break;
-            case 'ban':
-                if (!$conn->user->isAdmin){
-                    return false;
-                }
+                        if (!$user->mute) {
+                            User::where(['name' => $data->payload])->update(['mute' => 1]);
+                            /*$user->mute = 1;
+                            $user->save();*/
+                        } else if ($user->mute) {
+                            /*$user->mute = 0;
+                            $user->save();*/
+                        }
 
+                        var_dump($user->mute);
 
+                        //TODO перезапись на лету
 
-                break;
+                        /*$key = $user->id;
+                        var_dump('key' . $key);
+                        User::all()->forget($key);
+                        $conn->user = $user;
+                        $this->connections->push($conn);*/
+
+                        $conn->send(json_encode(array('action' => 'say', 'payload' => 'muted ' . $user->name . ' ' . $user->mute)));
+                    }
+                    break;
+            }
         }
-
-
-
     }
 }
