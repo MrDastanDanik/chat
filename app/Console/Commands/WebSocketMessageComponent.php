@@ -8,23 +8,27 @@ use App\Models\User;
 use Exception;
 use GuzzleHttp\Psr7\Request;
 use Illuminate\Support\Collection;
+use phpDocumentor\Reflection\Types\Array_;
 use Ratchet\ConnectionInterface;
 use Ratchet\RFC6455\Messaging\MessageInterface;
 use Ratchet\WebSocket\MessageComponentInterface;
 use Ratchet\WebSocket\WsConnection;
+use Auth;
 
 class WebSocketMessageComponent implements MessageComponentInterface
 {
     private $connections;
+    private $lastMsg;
 
     public function __construct()
     {
         $this->connections = new Collection();
+        $this->lastMsg = [];
     }
 
     /**
      * When a new connection is opened it will be passed to this method
-     * @param ConnectionInterface $conn The socket/connection that just connected to your application
+     * @param ConnectionInterface $conn The socket/connectionmuted ban that just connected to your application
      * @throws Exception
      */
     function onOpen(ConnectionInterface $conn)
@@ -38,13 +42,27 @@ class WebSocketMessageComponent implements MessageComponentInterface
         // запоминаем пользователя в обьекте подключения
         $conn->user = $user;
 
+        if ($conn->user->ban) {
+            $conn->send(json_encode(['action' => 'alert', 'payload' => 'Вы забанены']));
+            $conn->send(json_encode(['action' => 'ban', '']));
+            $conn->close();
+            Auth::logout();
+        }
+
         $this->connections->add($conn);
 
         $conn->send($conn->user);
 
-        foreach ($this->connections as $connections) {
-            $connections->send(json_encode(array('action' => 'connected', 'payload' => $conn->user->name)));
-            $connections->send(json_encode(array('action' => 'say', 'payload' => $conn->user->name . ' connected')));
+        $users = array();
+        foreach ($this->connections as $connection) {
+            if (!in_array($connection->user->name, $users))
+                array_push($users, $connection->user->name);
+        }
+
+        foreach ($this->connections as $connection) {
+            /** @var $connection ConnectionInterface */
+            $connection->send(json_encode(['action' => 'say', 'payload' => $conn->user->name . ' connected']));
+            $connection->send(json_encode(['action' => 'users', 'payload' => $users, 'user' => $connection->user]));
         }
     }
 
@@ -55,11 +73,19 @@ class WebSocketMessageComponent implements MessageComponentInterface
      */
     function onClose(ConnectionInterface $conn)
     {
-        foreach ($this->connections as $connections) {
-            $connections->send(json_encode(array('action' => 'disconnected', 'payload' => $conn->user->name)));
-            $connections->send(json_encode(array('action' => 'say', 'payload' => $conn->user->name . ' disconnected')));
-        }
+        $this->connections->forget($this->connections->search($conn));
 
+
+        $users = array();
+        foreach ($this->connections as $connection) {
+            if (!in_array($connection->user->name, $users))
+                array_push($users, $connection->user->name);
+        };
+
+        foreach ($this->connections as $connection) {
+            $connection->send(json_encode(['action' => 'say', 'payload' => $conn->user->name . ' disconnected']));
+            $connection->send(json_encode(['action' => 'users', 'payload' => $users, 'user' => $connection->user]));
+        }
     }
 
     /**
@@ -71,48 +97,93 @@ class WebSocketMessageComponent implements MessageComponentInterface
      */
     function onError(ConnectionInterface $conn, Exception $e)
     {
-
+        foreach ($this->connections as $connection) {
+            $connection->send(json_encode(['action' => 'say', 'payload' => $e]));
+        }
     }
 
+    /**
+     * @param ConnectionInterface $conn
+     * @param MessageInterface $msg
+     */
     public function onMessage(ConnectionInterface $conn, MessageInterface $msg)
     {
         $data = json_decode($msg->getPayload());
-        var_dump($conn->user->mute);
-        if (!$conn->user->mute) {
-            switch ($data->action) {
-                case 'say':
-                    foreach ($this->connections as $connections) {
-                        $connections->send(json_encode(array('action' => 'say', 'payload' => $conn->user->name . ' : ')));
-                        $connections->send($msg->getPayload());
-                    }
-                    break;
-                case 'mute':
-                    $user = User::where(['name' => $data->payload])->first();
-                    if (!$user->admin) {
-
-                        if (!$user->mute) {
-                            User::where(['name' => $data->payload])->update(['mute' => 1]);
-                            /*$user->mute = 1;
-                            $user->save();*/
-                        } else if ($user->mute) {
-                            /*$user->mute = 0;
-                            $user->save();*/
-                        }
-
-                        var_dump($user->mute);
-
-                        //TODO перезапись на лету
-
-                        /*$key = $user->id;
-                        var_dump('key' . $key);
-                        User::all()->forget($key);
-                        $conn->user = $user;
-                        $this->connections->push($conn);*/
-
-                        $conn->send(json_encode(array('action' => 'say', 'payload' => 'muted ' . $user->name . ' ' . $user->mute)));
-                    }
-                    break;
-            }
+        if ($conn->user->ban || $conn->user->mute) {
+            return;
         }
+        switch ($data->action) {
+            case 'say':
+                if (strlen($data->payload) > 200) {
+                    $conn->send(json_encode(['action' => 'alert', 'payload' => 'не более 200 символов в сообщении']));
+                    return;
+                }
+
+                //TODO проверка 15 секунд
+
+                var_dump($this->lastMsg[$conn->user]);
+                //var_dump($this->lastMsg[$conn->user->id] - microtime());
+
+                foreach ($this->connections as $connection) {
+                    $connection->send(json_encode(['action' => 'say', 'payload' => $conn->user->name . ' : ']));
+                    $connection->send($msg->getPayload());
+                    $this->lastMsg[$connection->user->id] = microtime();
+                }
+                break;
+            case 'mute':
+                $user = User::where(['name' => $data->payload])->first();
+                if ($user->admin) {
+                    return;
+                }
+
+                $user->mute = !$user->mute;
+                $user->save();
+
+                foreach ($this->connections as $connection) {
+                    if ($user->id === $connection->user->id) {
+                        $connection->user = $user;
+                        if ($user->mute) {
+                            $connection->send(json_encode(['action' => 'alert', 'payload' => 'Вам запрещенно отправлять сообщения']));
+                        } else {
+                            $connection->send(json_encode(['action' => 'alert', 'payload' => 'Вам разрешенно отправлять сообщения']));
+                        }
+                    }
+                }
+
+                foreach ($this->connections as $connection) {
+                    if ($user->mute) {
+                        $connection->send(json_encode(['action' => 'say', 'payload' => 'muted ' . $user->name]));
+                    } else {
+                        $connection->send(json_encode(['action' => 'say', 'payload' => 'unmuted ' . $user->name]));
+                    }
+                }
+                break;
+            case 'ban':
+                $user = User::where(['name' => $data->payload])->first();
+                if ($user->admin) {
+                    return;
+                }
+
+                $user->ban = !$user->ban;
+                $user->save();
+
+                foreach ($this->connections as $connection) {
+                    if ($user->id === $connection->user->id) {
+                        $connection->send(json_encode(['action' => 'alert', 'payload' => 'Вы забанены']));
+                        $connection->send(json_encode(['action' => 'ban', '']));
+                        $connection->close();
+                    }
+                }
+
+                foreach ($this->connections as $connection) {
+                    if ($user->ban) {
+                        $connection->send(json_encode(['action' => 'say', 'payload' => 'baned ' . $user->name]));
+                    } else {
+                        $connection->send(json_encode(['action' => 'say', 'payload' => 'unbaned ' . $user->name]));
+                    }
+                }
+                break;
+        }
+
     }
 }

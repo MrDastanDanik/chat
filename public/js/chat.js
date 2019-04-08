@@ -1,61 +1,60 @@
-let conn;
-
 document.addEventListener('DOMContentLoaded', function () {
-    conn = new WebSocket(`ws://localhost:8090?token=${USER_TOKEN}`);
-    chat();
-});
+    let conn = new WebSocket(`ws://localhost:8090?token=${USER_TOKEN}`);
 
-function chat() {
-    $('.hid').css('display', 'none');
+    conn.onopen = function (e) {
+        console.log("Connection established!");
+    };
 
-    $('.in').on('click', function () {
-        $('.hid').css('display', '');
-        $('.in').css('display', 'none');
-        let date = `${new Date().getHours()}:${new Date().getMinutes()}`;
+    conn.onclose = function (e) {
+        if (event.wasClean) {
+            console.log('Соединение закрыто');
+        } else {
+            console.log('Обрыв соединения');
+        }
+        console.log(e);
+    };
 
-        conn = new WebSocket(`ws://localhost:8090?token=${USER_TOKEN}`);
-
-        conn.onopen = function (e) {
-            console.log("Connection established!");
-            conn.send(JSON.stringify({action: "connected"}));
-        };
-
-        conn.onclose = function (e) {
-            conn.send(JSON.stringify({action: "disconnected"}));
-            if (event.wasClean) {
-                console.log('Соединение закрыто');
-            } else {
-                console.log('Обрыв соединения');
-            }
-        };
-
-        $('.btn-primary').on('click', function () {
-            let message = $(".type_msg").val();
-            conn.send(JSON.stringify({action: "say", payload: message}));
-        });
-
-        $('.out').on('click', function () {
-            conn.close();
-            $('.hid').css('display', 'none');
-            $('.in').css('display', '');
-        });
-
-        conn.onmessage = function (e) {
-            let data = JSON.parse(e.data);
-            console.log(data);
-            switch (data.action) {
-                case "say":
-                    $('.msg').append(`<div class="incoming_msg">${data.payload}</div>`);
-                    $(".type_msg").val('');
-                    break;
-                case "connected":
-                    $('.online').append(`<input type="button" class="btn user" onclick="muted(this)" value=${data.payload}>`);
-                    break;
-            }
-        };
+    $('.btn-primary').on('click', function () {
+        let message = $(".type_msg").val();
+        conn.send(JSON.stringify({action: "say", payload: message}));
+        $(".type_msg").val('');
     });
-}
 
-function muted(elem) {
-    conn.send(JSON.stringify({action: "mute", payload: elem.value}));
-}
+    conn.onmessage = function (e) {
+        let data = JSON.parse(e.data);
+        switch (data.action) {
+            case "say":
+                $('.msg').append(`<div class="incoming_msg">${data.payload}</div>`);
+                break;
+            case "users":
+                $('.user').remove();
+
+                if (data.user.admin) {
+                    for (let i = 0; i <= data.payload.length - 1; i++) {
+                        $('.online').append(`<input type="button" class="btn user ${data.payload[i]}" onclick="muted(this)" value=${data.payload[i]}>
+                        <img class="user ${data.payload[i]}" src="https://img.icons8.com/color/48/000000/delete-sign.png" onclick="banned(this)" alt=${data.payload[i]}>`);
+                    }
+                } else {
+                    for (let i = 0; i <= data.payload.length - 1; i++) {
+                        $('.online').append(`<span class="user">${data.payload[i]}; </span>`);
+                    }
+                }
+                break;
+            case "alert":
+                alert(data.payload);
+                break;
+            case "ban":
+                event.preventDefault();
+                document.getElementById('logout-form').submit();
+                break;
+        }
+    };
+
+    window.muted = function(elem) {
+        conn.send(JSON.stringify({action: "mute", payload: elem.value}));
+    };
+
+    window.banned = function(elem) {
+        conn.send(JSON.stringify({action: "ban", payload: elem.alt}));
+    }
+});
