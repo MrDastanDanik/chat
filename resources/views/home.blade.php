@@ -7,11 +7,13 @@
 @endpush
 
 @push('links')
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <link src="css/chat.css" rel="stylesheet">
 @endpush
 
 @section('content')
     <div class="container">
+
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card">
@@ -24,12 +26,13 @@
                         </div>
                     @endif
 
-                    <div class="online">
-                    </div>
+
                     </br>
+
                     <div class="card-footer hid">
                         <div class="input-group">
-                            <textarea class="form-control type_msg" maxlength="200" placeholder="Type your message..."></textarea>
+                            <input type="text" class="form-control type_msg" maxlength="200"
+                                      placeholder="Type your message...">
                             <div class="input-group-append">
                                 <button type="submit" class="btn btn-primary">Send</button>
                             </div>
@@ -37,6 +40,7 @@
                     </div>
                     <div class="msg hid"></div>
                 </div>
+
             </div>
         </div>
     </div>
@@ -44,120 +48,80 @@
         const USER_TOKEN = `{{$user}}`;
     </script>
 
-    <!--
-    <div class="container">
-        <div class="row chat-window col-xs-5 col-md-3" id="chat_window_1" style="margin-left:10px;">
-            <div class="col-xs-12 col-md-12">
-                <div class="panel panel-default">
-                    <div class="panel-heading top-bar">
-                        <div class="col-md-8 col-xs-8">
-                            <h3 class="panel-title"><span class="glyphicon glyphicon-comment"></span> Chat - Miguel</h3>
-                        </div>
-                        <div class="col-md-4 col-xs-4" style="text-align: right;">
-                            <a href="#"><span id="minim_chat_window" class="glyphicon glyphicon-minus icon_minim"></span></a>
-                            <a href="#"><span class="glyphicon glyphicon-remove icon_close" data-id="chat_window_1"></span></a>
-                        </div>
-                    </div>
-                    <div class="panel-body msg_container_base">
-                        <div class="row msg_container base_sent">
-                            <div class="col-md-10 col-xs-10">
-                                <div class="messages msg_sent">
-                                    <p>that mongodb thing looks good, huh?
-                                        tiny master db, and huge document store</p>
-                                    <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
-                                </div>
-                            </div>
-                            <div class="col-md-2 col-xs-2 avatar">
-                                <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
-                            </div>
-                        </div>
-                        <div class="row msg_container base_receive">
-                            <div class="col-md-2 col-xs-2 avatar">
-                                <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
-                            </div>
-                            <div class="col-md-10 col-xs-10">
-                                <div class="messages msg_receive">
-                                    <p>that mongodb thing looks good, huh?
-                                        tiny master db, and huge document store</p>
-                                    <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row msg_container base_receive">
-                            <div class="col-md-2 col-xs-2 avatar">
-                                <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
-                            </div>
-                            <div class="col-xs-10 col-md-10">
-                                <div class="messages msg_receive">
-                                    <p>that mongodb thing looks good, huh?
-                                        tiny master db, and huge document store</p>
-                                    <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row msg_container base_sent">
-                            <div class="col-xs-10 col-md-10">
-                                <div class="messages msg_sent">
-                                    <p>that mongodb thing looks good, huh?
-                                        tiny master db, and huge document store</p>
-                                    <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
-                                </div>
-                            </div>
-                            <div class="col-md-2 col-xs-2 avatar">
-                                <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
-                            </div>
-                        </div>
-                        <div class="row msg_container base_receive">
-                            <div class="col-md-2 col-xs-2 avatar">
-                                <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
-                            </div>
-                            <div class="col-xs-10 col-md-10">
-                                <div class="messages msg_receive">
-                                    <p>that mongodb thing looks good, huh?
-                                        tiny master db, and huge document store</p>
-                                    <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row msg_container base_sent">
-                            <div class="col-md-10 col-xs-10 ">
-                                <div class="messages msg_sent">
-                                    <p>that mongodb thing looks good, huh?
-                                        tiny master db, and huge document store</p>
-                                    <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
-                                </div>
-                            </div>
-                            <div class="col-md-2 col-xs-2 avatar">
-                                <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
-                            </div>
+
+    <!-- -------------------------------------------------------------------------------------------------------- -->
+
+<div class="chat body">
+
+    <div class="chat container">
+        <div class="chat row">
+            <div class="chat col-sm-4">
+                <div class="chat panel panel-primary">
+                    <div class="chat panel-heading top-bar">
+                        <div class="chat col-md-8 col-xs-8">
+                            <h3 class="chat panel-title"><span class="chat glyphicon glyphicon-book"></span> Contacts</h3>
                         </div>
                     </div>
-                    <div class="panel-footer">
-                        <div class="input-group">
-                            <input id="btn-input" type="text" class="form-control input-sm chat_input" placeholder="Write your message here..." />
-                            <span class="input-group-btn">
-                        <button class="btn btn-primary btn-sm" id="btn-chat">Send</button>
+
+                    <table class="chat table table-striped table-hover">
+                        <tbody>
+                        <!--<tr>
+                            <td>1</td>
+                            <td>Masha</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Vasya</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Inna</td>
+                        </tr>-->
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+
+
+            <!--<div class="chat col-sm-8">
+                <div class="chat chatbody">
+                    <div class="chat panel panel-primary">
+                        <div class="chat panel-heading top-bar">
+                            <div class="chat col-md-8 col-xs-8">
+                                <h3 class="chat panel-title"><span class="chat glyphicon glyphicon-comment"></span> Chat
+                                </h3>
+                            </div>
+                        </div>
+                        <div class="panel-body msg_container_base">
+
+                            <div class="chat row msg_container base_receive">
+                                <div class="chat col-md-10 col-xs-10">
+                                    <div class="chat messages msg_receive">
+                                        <p>that mongodb thing looks good, huh?
+                                            tiny master db, and huge document store</p>
+                                        <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="chat panel-footer">
+                            <div class="chat input-group">
+                                <input id="btn-input" type="text" class="chat form-control input-sm chat_input"
+                                       placeholder="Write your message here..."/>
+                                <span class="chat input-group-btn">
+                        <button class="chat btn btn-primary btn-sm" id="btn-chat"><i class="chat fa fa-send fa-1x" aria-hidden="true"></i></button>
                         </span>
+                            </div>
                         </div>
+
                     </div>
+
                 </div>
             </div>
         </div>
-
-        <div class="btn-group dropup">
-            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                <span class="glyphicon glyphicon-cog"></span>
-                <span class="sr-only">Toggle Dropdown</span>
-            </button>
-            <ul class="dropdown-menu" role="menu">
-                <li><a href="#" id="new_chat"><span class="glyphicon glyphicon-plus"></span> Novo</a></li>
-                <li><a href="#"><span class="glyphicon glyphicon-list"></span> Ver outras</a></li>
-                <li><a href="#"><span class="glyphicon glyphicon-remove"></span> Fechar Tudo</a></li>
-                <li class="divider"></li>
-                <li><a href="#"><span class="glyphicon glyphicon-eye-close"></span> Invisivel</a></li>
-            </ul>
-        </div>
-    </div>
-    -->
+</div>-->
 
 @endsection

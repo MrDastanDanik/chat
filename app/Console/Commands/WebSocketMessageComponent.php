@@ -19,11 +19,13 @@ class WebSocketMessageComponent implements MessageComponentInterface
 {
     private $connections;
     private $lastMsg;
+    private $userColor;
 
     public function __construct()
     {
         $this->connections = new Collection();
         $this->lastMsg = [];
+        $this->userColor = [];
     }
 
     /**
@@ -33,6 +35,7 @@ class WebSocketMessageComponent implements MessageComponentInterface
      */
     function onOpen(ConnectionInterface $conn)
     {
+        global $userColor;
         parse_str($conn->httpRequest->getUri()->getQuery(), $params);
 
         if (empty($params['token'])
@@ -46,23 +49,31 @@ class WebSocketMessageComponent implements MessageComponentInterface
             $conn->send(json_encode(['action' => 'alert', 'payload' => 'Вы забанены']));
             $conn->send(json_encode(['action' => 'ban', '']));
             $conn->close();
-            Auth::logout();
         }
 
         $this->connections->add($conn);
 
         $conn->send($conn->user);
 
+        foreach ($this->connections as $connection) {
+            if ($connection->user->admin) {
+                $connection->send(json_encode(['action' => 'allUsers', 'payload' => User::all(), 'user' => $connection->user]));
+            }
+        }
+
         $users = array();
         foreach ($this->connections as $connection) {
-            if (!in_array($connection->user->name, $users))
-                array_push($users, $connection->user->name);
+            $userColor[$conn->user->id] = strval(random_int(0, 230) . ", " . random_int(0, 230) . ", " . random_int(0, 230));
+            if (!in_array($connection->user->id, $users)) {
+                $users[] = $connection->user->name;
+                $users[$connection->user->name] = $userColor[$connection->user->id];
+            }
         }
 
         foreach ($this->connections as $connection) {
             /** @var $connection ConnectionInterface */
             $connection->send(json_encode(['action' => 'say', 'payload' => $conn->user->name . ' connected']));
-            $connection->send(json_encode(['action' => 'users', 'payload' => $users, 'user' => $connection->user]));
+            $connection->send(json_encode(['action' => 'users', 'payload' => $users, 'user' => $connection->user, 'color' => $userColor[$conn->user->id]]));
         }
     }
 
@@ -73,18 +84,23 @@ class WebSocketMessageComponent implements MessageComponentInterface
      */
     function onClose(ConnectionInterface $conn)
     {
+        global $userColor;
+        $userColor[$conn->user->id] = null;
+        $userColor[$conn->user->name] = null;
         $this->connections->forget($this->connections->search($conn));
-
 
         $users = array();
         foreach ($this->connections as $connection) {
-            if (!in_array($connection->user->name, $users))
-                array_push($users, $connection->user->name);
-        };
+            $userColor[$conn->user->id] = strval(random_int(0, 230) . ", " . random_int(0, 230) . ", " . random_int(0, 230));
+            if (!in_array($connection->user->id, $users)) {
+                $users[] = $connection->user->name;
+                $users[$connection->user->name] = $userColor[$connection->user->id];
+            }
+        }
 
         foreach ($this->connections as $connection) {
             $connection->send(json_encode(['action' => 'say', 'payload' => $conn->user->name . ' disconnected']));
-            $connection->send(json_encode(['action' => 'users', 'payload' => $users, 'user' => $connection->user]));
+            $connection->send(json_encode(['action' => 'users', 'payload' => $users, 'user' => $connection->user, 'color' => $userColor[$conn->user->id]]));
         }
     }
 
@@ -106,8 +122,11 @@ class WebSocketMessageComponent implements MessageComponentInterface
      * @param ConnectionInterface $conn
      * @param MessageInterface $msg
      */
-    public function onMessage(ConnectionInterface $conn, MessageInterface $msg)
+    public
+    function onMessage(ConnectionInterface $conn, MessageInterface $msg)
     {
+        global $lastMsg;
+        global $userColor;
         $data = json_decode($msg->getPayload());
         if ($conn->user->ban || $conn->user->mute) {
             return;
@@ -118,19 +137,21 @@ class WebSocketMessageComponent implements MessageComponentInterface
                     $conn->send(json_encode(['action' => 'alert', 'payload' => 'не более 200 символов в сообщении']));
                     return;
                 }
-
-                //TODO проверка 15 секунд
-
-                var_dump($this->lastMsg[$conn->user]);
-                //var_dump($this->lastMsg[$conn->user->id] - microtime());
-
+                $deleySendMsg = 15;
                 foreach ($this->connections as $connection) {
-                    $connection->send(json_encode(['action' => 'say', 'payload' => $conn->user->name . ' : ']));
-                    $connection->send($msg->getPayload());
-                    $this->lastMsg[$connection->user->id] = microtime();
+                    if ($conn->user->id == $connection->user->id) {
+                        if (!is_null($lastMsg[$connection->user->id]) && ($lastMsg[$connection->user->id] - round(microtime(true))) * -1 < $deleySendMsg) {
+                            $connection->send(json_encode(['action' => 'alert', 'payload' => 'Ожидайте еще: ' . ($deleySendMsg - ($lastMsg[$conn->user->id] - round(microtime(true))) * -1) . ' сек']));
+                        } else {
+                            $connection->send(json_encode(['action' => 'say', 'payload' => $conn->user->name . ' : ' . json_decode($msg->getPayload())->payload, 'color' => $userColor[$conn->user->id]]));
+                            $lastMsg[$connection->user->id] = round(microtime(true));
+                        }
+                    }
                 }
+
                 break;
-            case 'mute':
+            case
+            'mute':
                 $user = User::where(['name' => $data->payload])->first();
                 if ($user->admin) {
                     return;
