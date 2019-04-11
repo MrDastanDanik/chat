@@ -6,13 +6,10 @@
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
 @endpush
 
-@push('links')
-    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-    <link src="css/chat.css" rel="stylesheet">
-@endpush
+
 
 @section('content')
-    <div class="container">
+   <!-- <div class="container">
 
         <div class="row justify-content-center">
             <div class="col-md-8">
@@ -43,7 +40,7 @@
 
             </div>
         </div>
-    </div>
+    </div>-->
     <script>
         const USER_TOKEN = `{{$user}}`;
     </script>
@@ -65,18 +62,6 @@
 
                     <table class="chat table table-striped table-hover">
                         <tbody>
-                        <!--<tr>
-                            <td>1</td>
-                            <td>Masha</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>Vasya</td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>Inna</td>
-                        </tr>-->
                         </tbody>
                     </table>
 
@@ -84,7 +69,7 @@
             </div>
 
 
-            <!--<div class="chat col-sm-8">
+            <div class="chat col-sm-8">
                 <div class="chat chatbody">
                     <div class="chat panel panel-primary">
                         <div class="chat panel-heading top-bar">
@@ -93,9 +78,9 @@
                                 </h3>
                             </div>
                         </div>
-                        <div class="panel-body msg_container_base">
+                        <div class="chat panel-body container-fluid msg_container_base" style="height: 300px;overflow-y: scroll;overflow-x: hidden;">
 
-                            <div class="chat row msg_container base_receive">
+                            <!--<div class="chat row msg_container base_receive">
                                 <div class="chat col-md-10 col-xs-10">
                                     <div class="chat messages msg_receive">
                                         <p>that mongodb thing looks good, huh?
@@ -103,11 +88,20 @@
                                         <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
                                     </div>
                                 </div>
-                            </div>
+                            </div>-->
 
                         </div>
 
-                        <div class="chat panel-footer">
+                        <div class="card-footer hid">
+                            <div class="input-group">
+                                <input type="text" class="form-control type_msg" maxlength="200"
+                                       placeholder="Type your message...">
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-primary">Send</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!--<div class="chat panel-footer">
                             <div class="chat input-group">
                                 <input id="btn-input" type="text" class="chat form-control input-sm chat_input"
                                        placeholder="Write your message here..."/>
@@ -115,13 +109,13 @@
                         <button class="chat btn btn-primary btn-sm" id="btn-chat"><i class="chat fa fa-send fa-1x" aria-hidden="true"></i></button>
                         </span>
                             </div>
-                        </div>
+                        </div>-->
 
                     </div>
 
                 </div>
             </div>
         </div>
-</div>-->
+</div>
 
 @endsection
